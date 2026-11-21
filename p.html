@@ -3,24 +3,41 @@
 <head>
 <meta charset="utf-8">
 <style>
-  html, body { margin:0; width:100%; height:100%; background:#000; overflow:hidden; }
-  video { width:100vw; height:100vh; object-fit:contain; } /* fill = растянуть, cover = обрезать края */
+  html, body { margin:0; width:100%; height:100%; background:#000; overflow:hidden; color:#ccc; font:22px sans-serif; }
+  video { width:100vw; height:100vh; object-fit:contain; }
+  #msg { position:fixed; left:20px; top:20px; right:20px; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 </head>
 <body>
 <video id="v" playsinline></video>
+<div id="msg"></div>
 <script>
-  const src = location.hash.slice(1);   // ссылка после знака #
+  const src = location.hash.slice(1);
   const v = document.getElementById('v');
-  if (window.Hls && Hls.isSupported()) {
-    const h = new Hls(); h.loadSource(src); h.attachMedia(v);
-  } else { v.src = src; }
-  v.muted = false;
-v.play().catch(() => {
-  v.muted = true; v.play();                       // запасной вариант: старт без звука
-  addEventListener('click', () => { v.muted = false; }, { once: true }); // звук по клику
-});
+  const msg = document.getElementById('msg');
+  v.addEventListener('playing', () => { msg.textContent = ''; });
+
+  if (!src) {
+    msg.textContent = 'Нет ссылки. Добавьте ссылку на .m3u8 после знака # в адресе.';
+  } else {
+    if (window.Hls && Hls.isSupported()) {
+      const h = new Hls();
+      h.on(Hls.Events.ERROR, (e, d) => {
+        if (d.fatal) msg.textContent = 'Ошибка: ' + d.type + ' / ' + d.details +
+          (d.response ? ' (HTTP ' + d.response.code + ')' : '');
+      });
+      h.loadSource(src);
+      h.attachMedia(v);
+    } else {
+      v.src = src;
+    }
+    v.muted = false;
+    v.play().catch(() => {
+      v.muted = true; v.play();
+      addEventListener('click', () => { v.muted = false; }, { once: true });
+    });
+  }
 </script>
 </body>
 </html>
