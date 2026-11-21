@@ -5,15 +5,18 @@
 <style>
   html, body { margin:0; width:100%; height:100%; background:#000; overflow:hidden; color:#ccc; font:22px sans-serif; }
   video { width:100vw; height:100vh; object-fit:contain; }
+  video::cue { font-size:150%; color:#fff; background:rgba(0,0,0,.6); }
   #msg { position:fixed; left:20px; top:20px; right:20px; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 </head>
 <body>
-<video id="v" playsinline></video>
+<video id="v" playsinline crossorigin="anonymous"></video>
 <div id="msg"></div>
 <script>
-  const src = location.hash.slice(1);
+  const parts = location.hash.slice(1).split('|');
+  const src = parts[0];
+  const sub = parts[1];
   const v = document.getElementById('v');
   const msg = document.getElementById('msg');
   v.addEventListener('playing', () => { msg.textContent = ''; });
@@ -21,6 +24,17 @@
   if (!src) {
     msg.textContent = 'Нет ссылки. Добавьте ссылку на .m3u8 после знака # в адресе.';
   } else {
+    if (sub) {
+      const t = document.createElement('track');
+      t.kind = 'subtitles';
+      t.label = 'Субтитры';
+      t.src = sub;
+      t.default = true;
+      v.appendChild(t);
+      v.addEventListener('loadedmetadata', () => {
+        if (v.textTracks[0]) v.textTracks[0].mode = 'showing';
+      });
+    }
     if (window.Hls && Hls.isSupported()) {
       const h = new Hls();
       h.on(Hls.Events.ERROR, (e, d) => {
