@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin:0; width:100%; height:100%; background:#000; overflow:hidden; }
+  video { width:100vw; height:100vh; object-fit:contain; } /* fill = растянуть, cover = обрезать края */
+</style>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+</head>
+<body>
+<video id="v" autoplay playsinline></video>
+<script>
+  const src = location.hash.slice(1);   // ссылка после знака #
+  const v = document.getElementById('v');
+  if (window.Hls && Hls.isSupported()) {
+    const h = new Hls(); h.loadSource(src); h.attachMedia(v);
+  } else { v.src = src; }
+</script>
+</body>
+</html>
