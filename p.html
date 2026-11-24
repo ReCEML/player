@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <style>
-  html, body { margin:0; width:100%; height:100%; background:#000; overflow:hidden; color:#ccc; font:22px sans-serif; }
+  html, body { margin:0; width:100%; height:100%; background:#000; overflow:hidden; color:#ccc; font:28px sans-serif; }
   video { width:100vw; height:100vh; object-fit:contain; }
   video::cue { font-size:150%; color:#fff; background:rgba(0,0,0,.6); }
   #msg { position:fixed; left:20px; top:20px; right:20px; }
@@ -14,29 +14,34 @@
 <video id="v" playsinline crossorigin="anonymous"></video>
 <div id="msg"></div>
 <script>
-  const parts = location.hash.slice(1).split('|');
-  const src = parts[0];
-  const sub = parts[1];
+  let src = '', sub = '', start = 0;
+  location.hash.slice(1).split('|').forEach(p => {
+    if (/^\d{10}$/.test(p)) start = +p;      // время старта (unix, секунды)
+    else if (!src) src = p;                   // ссылка на видео
+    else if (p) sub = p;                      // ссылка на субтитры
+  });
   const v = document.getElementById('v');
   const msg = document.getElementById('msg');
   v.addEventListener('playing', () => { msg.textContent = ''; });
 
-  if (!src) {
-    msg.textContent = 'Нет ссылки. Добавьте ссылку на .m3u8 после знака # в адресе.';
-  } else {
+  function begin() {
+    const pos = start ? Date.now() / 1000 - start : 0;
+    if (pos < 0) {
+      msg.textContent = 'Начало через ' + Math.ceil(-pos) + ' сек';
+      setTimeout(begin, 500);
+      return;
+    }
+    msg.textContent = '';
     if (sub) {
       const t = document.createElement('track');
-      t.kind = 'subtitles';
-      t.label = 'Субтитры';
-      t.src = sub;
-      t.default = true;
+      t.kind = 'subtitles'; t.label = 'Субтитры'; t.src = sub; t.default = true;
       v.appendChild(t);
       v.addEventListener('loadedmetadata', () => {
         if (v.textTracks[0]) v.textTracks[0].mode = 'showing';
       });
     }
     if (window.Hls && Hls.isSupported()) {
-      const h = new Hls();
+      const h = new Hls({ startPosition: pos > 1 ? pos : -1 });
       h.on(Hls.Events.ERROR, (e, d) => {
         if (d.fatal) msg.textContent = 'Ошибка: ' + d.type + ' / ' + d.details +
           (d.response ? ' (HTTP ' + d.response.code + ')' : '');
@@ -45,6 +50,7 @@
       h.attachMedia(v);
     } else {
       v.src = src;
+      v.addEventListener('loadedmetadata', () => { if (pos > 1) v.currentTime = pos; });
     }
     v.muted = false;
     v.play().catch(() => {
@@ -52,6 +58,9 @@
       addEventListener('click', () => { v.muted = false; }, { once: true });
     });
   }
+
+  if (!src) msg.textContent = 'Нет ссылки. Добавьте ссылку на .m3u8 после знака # в адресе.';
+  else begin();
 </script>
 </body>
 </html>
