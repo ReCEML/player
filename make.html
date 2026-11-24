@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Ссылка для ТВ</title>
+<style>
+  body { font:18px sans-serif; max-width:800px; margin:30px auto; padding:0 15px; }
+  input { width:100%; padding:8px; margin:4px 0 14px; box-sizing:border-box; }
+  button { padding:10px 18px; font-size:18px; }
+  #out { word-break:break-all; background:#eee; padding:10px; margin-top:14px; }
+</style>
+</head>
+<body>
+<h2>Ссылка для ТВ</h2>
+Ссылка на видео (.m3u8):<input id="v">
+Ссылка на субтитры (необязательно):<input id="s">
+Начать через (секунд):<input id="d" type="number" value="60">
+<button onclick="gen()">Создать ссылку</button>
+<div id="out"></div>
+<script>
+  function gen() {
+    const v = document.getElementById('v').value.trim();
+    const s = document.getElementById('s').value.trim();
+    const d = parseInt(document.getElementById('d').value) || 0;
+    const start = Math.floor(Date.now() / 1000) + d;
+    const base = location.origin + location.pathname.replace('make.html', 'p.html');
+    const link = base + '#' + v + (s ? '|' + s : '') + '|' + start;
+    document.getElementById('out').textContent = link;
+    navigator.clipboard && navigator.clipboard.writeText(link);
+  }
+</script>
+</body>
+</html>
